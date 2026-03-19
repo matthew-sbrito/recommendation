@@ -2,6 +2,7 @@ using Application.Abstractions.Messaging;
 using Application.Categories.GetPaginated;
 using Application.Shared;
 using SharedKernel;
+using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Endpoints.Categories;

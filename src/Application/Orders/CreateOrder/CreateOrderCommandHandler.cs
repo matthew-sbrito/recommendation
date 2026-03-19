@@ -16,7 +16,7 @@ internal sealed class CreateOrderCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateOrderCommand command, CancellationToken cancellationToken)
     {
-        List<Guid> productIds = command.Items.Select(i => i.ProductId).ToList();
+        var productIds = command.Items.Select(i => i.ProductId).ToList();
 
         List<Product> products = await context.Products
             .AsNoTracking()

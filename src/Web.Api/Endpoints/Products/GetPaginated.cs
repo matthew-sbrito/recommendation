@@ -3,6 +3,7 @@ using Application.Products;
 using Application.Products.GetPaginated;
 using Application.Shared;
 using SharedKernel;
+using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Endpoints.Products;

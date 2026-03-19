@@ -2,6 +2,7 @@ using Application.Abstractions.Messaging;
 using Application.Users.Register;
 using Domain.Users;
 using SharedKernel;
+using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Endpoints.Users;

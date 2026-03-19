@@ -52,8 +52,8 @@ internal sealed class GetRecommendationsQueryHandler(
             }
 
             int currentAge = CalculateAge(currentUser.BirthDate);
-            DateOnly minBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge + 5) - 1));
-            DateOnly maxBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge - 5)));
+            var minBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge + 5) - 1));
+            var maxBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge - 5)));
 
             List<Guid> similarUserIds = await context.Users
                 .AsNoTracking()
@@ -170,9 +170,13 @@ internal sealed class GetRecommendationsQueryHandler(
 
     private static int CalculateAge(DateOnly birthDate)
     {
-        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(DateTime.Today);
         int age = today.Year - birthDate.Year;
-        if (birthDate > today.AddYears(-age)) age--;
+        if (birthDate > today.AddYears(-age))
+        {
+            age--;
+        }
+
         return age;
     }
 }

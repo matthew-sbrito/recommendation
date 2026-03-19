@@ -2,6 +2,7 @@ using Application.Abstractions.Messaging;
 using Application.Products;
 using Application.Products.GetRecommendations;
 using SharedKernel;
+using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Endpoints.Products;

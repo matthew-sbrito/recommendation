@@ -1,6 +1,7 @@
 using Application.Abstractions.Messaging;
 using Application.Orders.GetById;
 using SharedKernel;
+using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Endpoints.Orders;

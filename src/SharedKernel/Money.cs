@@ -14,10 +14,14 @@ public sealed class Money : IEquatable<Money>, IComparable<Money>
     public static Result<Money> Create(decimal amount, string currency = "USD")
     {
         if (amount < 0)
+        {
             return Result.Failure<Money>(Error.Failure("Money.NegativeAmount", "Amount cannot be negative."));
+        }
 
         if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
+        {
             return Result.Failure<Money>(Error.Failure("Money.InvalidCurrency", "Currency must be a 3-letter ISO code."));
+        }
 
         return Result.Success(new Money(Math.Round(amount, 2), currency.ToUpperInvariant()));
     }
@@ -41,7 +45,9 @@ public sealed class Money : IEquatable<Money>, IComparable<Money>
     private void GuardSameCurrency(Money other)
     {
         if (Currency != other.Currency)
+        {
             throw new InvalidOperationException($"Cannot operate on {Currency} and {other.Currency}.");
+        }
     }
 
     public bool Equals(Money? other) =>
@@ -56,6 +62,8 @@ public sealed class Money : IEquatable<Money>, IComparable<Money>
     public static bool operator !=(Money? l, Money? r) => !Equals(l, r);
     public static bool operator >(Money l, Money r) => l.CompareTo(r) > 0;
     public static bool operator <(Money l, Money r) => l.CompareTo(r) < 0;
+    public static bool operator >=(Money l, Money r) => l.CompareTo(r) >= 0;
+    public static bool operator <=(Money l, Money r) => l.CompareTo(r) <= 0;
     public static Money operator +(Money l, Money r) => l.Add(r);
     public static Money operator -(Money l, Money r) => l.Subtract(r);
 }
