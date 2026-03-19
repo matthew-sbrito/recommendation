@@ -19,7 +19,9 @@ internal sealed class GetUserByEmailQueryHandler(IApplicationDbContext context, 
                 Id = u.Id,
                 FirstName = u.FirstName,
                 LastName = u.LastName,
-                Email = u.Email
+                Email = u.Email,
+                BirthDate = u.BirthDate,
+                Gender = u.Gender
             })
             .SingleOrDefaultAsync(cancellationToken);
 
