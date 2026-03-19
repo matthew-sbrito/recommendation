@@ -27,7 +27,7 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
                 .IsRequired();
         });
 
-        builder.Property(p => p.Embedding).HasColumnType("vector(1536)");
+        builder.Property(p => p.Embedding).HasColumnType("vector(1024)");
 
         builder.HasIndex(p => p.Embedding)
             .HasMethod("hnsw")

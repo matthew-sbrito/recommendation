@@ -28,7 +28,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerWithUi();
 
-    app.ApplyMigrations();
+    await app.ApplyMigrationsAsync();
+
+    await app.SeedDataAsync();
 }
 
 app.MapHealthChecks("health", new HealthCheckOptions
@@ -45,9 +47,6 @@ app.UseExceptionHandler();
 app.UseAuthentication();
 
 app.UseAuthorization();
-
-// REMARK: If you want to use Controllers, you'll need this.
-app.MapControllers();
 
 await app.RunAsync();
 

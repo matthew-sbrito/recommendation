@@ -5,5 +5,5 @@ namespace Application.Abstractions.Services;
 
 public interface IProductEmbeddingService
 {
-    Task<Result<float[]>> GenerateEmbeddingAsync(Product product);
+    Task<Result<float[]>> GenerateEmbeddingAsync(Product product, CancellationToken cancellationToken);
 }

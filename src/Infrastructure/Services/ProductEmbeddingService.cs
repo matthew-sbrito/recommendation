@@ -1,17 +1,13 @@
 using System.Net.Http.Json;
-using System.Reflection.Metadata.Ecma335;
 using Application.Abstractions.Services;
-using Domain.Orders;
 using Domain.Products;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SharedKernel;
 
 namespace Infrastructure.Services;
 
 internal sealed class ProductEmbeddingService(IHttpClientFactory httpClientFactory) : IProductEmbeddingService
 {
-    private readonly static Error UnexpectedError = Error.Failure(
+    private static readonly Error UnexpectedError = Error.Failure(
         "OpenRouter.Embedding",
         "Error while trying embedding product using OpenRouter.");
 
@@ -19,7 +15,7 @@ internal sealed class ProductEmbeddingService(IHttpClientFactory httpClientFacto
 
     public record EmbeddingData(float[] Embedding);
 
-    public async Task<Result<float[]>> GenerateEmbeddingAsync(Product product)
+    public async Task<Result<float[]>> GenerateEmbeddingAsync(Product product, CancellationToken cancellationToken)
     {
         HttpClient client = httpClientFactory.CreateClient("OpenRouter");
 
@@ -30,14 +26,14 @@ internal sealed class ProductEmbeddingService(IHttpClientFactory httpClientFacto
             encoding_format = "float",
         };
 
-        HttpResponseMessage response = await client.PostAsJsonAsync("/api/v1/embeddings", request);
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/v1/embeddings", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
             return Result.Failure<float[]>(UnexpectedError);
         }
 
-        OpenAIEmbeddingResponse? result = await response.Content.ReadFromJsonAsync<OpenAIEmbeddingResponse>();
+        OpenAIEmbeddingResponse? result = await response.Content.ReadFromJsonAsync<OpenAIEmbeddingResponse>(cancellationToken);
 
         if (result is null)
         {
@@ -52,7 +48,7 @@ internal sealed class ProductEmbeddingService(IHttpClientFactory httpClientFacto
         return $"""
             Name: {product.Name}
             Category: {product.Category.Name}
-            Description: {product.Category.Description}
+            Description: {product.Description}
             Price: {product.Price.Amount} {product.Price.Currency}
         """;
     }

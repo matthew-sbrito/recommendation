@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddTransient<IDomainEventsDispatcher, DomainEventsDispatcher>();
         services.AddTransient<IProductEmbeddingService, ProductEmbeddingService>();
+        services.AddTransient<DataSeeder>();
 
         return services;
     }

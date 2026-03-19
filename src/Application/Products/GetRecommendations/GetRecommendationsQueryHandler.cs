@@ -16,7 +16,7 @@ internal sealed class GetRecommendationsQueryHandler(
     IUserContext userContext)
     : IQueryHandler<GetRecommendationsQuery, List<ProductResponse>>
 {
-    private readonly static Error NoProductToMetric = Error.Failure(
+    private static readonly Error NoProductToMetric = Error.Failure(
         "Recommendation.NoProducts",
         "No products found to recommend products for you.");
 
@@ -59,7 +59,7 @@ internal sealed class GetRecommendationsQueryHandler(
             .ToListAsync(cancellationToken);
     }
 
-    public record GetOrderedOrSimilarByUserResult(List<Product> Products, bool Ordered);
+    private sealed record GetOrderedOrSimilarByUserResult(List<Product> Products, bool Ordered);
 
     private async Task<Result<GetOrderedOrSimilarByUserResult>> GetOrderedOrSimilarByUserAsync(
         CancellationToken cancellationToken)
