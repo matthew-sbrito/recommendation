@@ -1,10 +1,13 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
+using Application.Abstractions.Services;
 using Infrastructure.Authentication;
 using Infrastructure.Authorization;
 using Infrastructure.Database;
 using Infrastructure.DomainEvents;
+using Infrastructure.Services;
 using Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -24,6 +27,7 @@ public static class DependencyInjection
         IConfiguration configuration) =>
         services
             .AddServices()
+            .AddOpenRouterClient(configuration)
             .AddDatabase(configuration)
             .AddHealthChecks(configuration)
             .AddAuthenticationInternal(configuration)
@@ -32,8 +36,8 @@ public static class DependencyInjection
     private static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-
         services.AddTransient<IDomainEventsDispatcher, DomainEventsDispatcher>();
+        services.AddTransient<IProductEmbeddingService, ProductEmbeddingService>();
 
         return services;
     }
@@ -93,12 +97,30 @@ public static class DependencyInjection
     private static IServiceCollection AddAuthorizationInternal(this IServiceCollection services)
     {
         services.AddAuthorization();
-
         services.AddScoped<PermissionProvider>();
-
         services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
-
         services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddOpenRouterClient(
+        this IServiceCollection services,
+        IConfiguration config)
+    {
+        string openRouterUrl = config["OpenRouter:ApiUrl"];
+        string openRouterKey = config["OpenRouter:ApiKey"];
+
+        if (string.IsNullOrWhiteSpace(openRouterUrl) || string.IsNullOrWhiteSpace(openRouterKey))
+        {
+            throw new InvalidOperationException("Required configuration is missing 'OpenRouter'");
+        }
+
+        services.AddHttpClient("OpenRouter", client =>
+        {
+            client.BaseAddress = new Uri(openRouterUrl);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openRouterKey);
+        });
 
         return services;
     }

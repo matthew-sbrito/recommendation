@@ -1,6 +1,8 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
+using Domain.Orders;
+using Domain.Products;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Pgvector;
@@ -14,91 +16,36 @@ internal sealed class GetRecommendationsQueryHandler(
     IUserContext userContext)
     : IQueryHandler<GetRecommendationsQuery, List<ProductResponse>>
 {
+    private readonly static Error NoProductToMetric = Error.Failure(
+        "Recommendation.NoProducts",
+        "No products found to recommend products for you.");
+
     public async Task<Result<List<ProductResponse>>> Handle(
         GetRecommendationsQuery query,
         CancellationToken cancellationToken)
     {
-        Guid userId = userContext.UserId;
+        Result<GetOrderedOrSimilarByUserResult> productsResult =
+            await GetOrderedOrSimilarByUserAsync(cancellationToken);
 
-        List<Guid> orderedProductIds = await context.Orders
-            .AsNoTracking()
-            .Where(o => o.UserId == userId)
-            .SelectMany(o => o.Items.Select(i => i.ProductId))
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        Vector? searchVector = null;
-
-        if (orderedProductIds.Count > 0)
+        if (productsResult.IsFailure)
         {
-            List<Vector> orderedEmbeddings = await context.Products
-                .AsNoTracking()
-                .Where(p => orderedProductIds.Contains(p.Id))
-                .Select(p => p.Embedding)
-                .ToListAsync(cancellationToken);
-
-            searchVector = ComputeAverageEmbedding(orderedEmbeddings);
-        }
-        else
-        {
-            User? currentUser = await context.Users
-                .AsNoTracking()
-                .Where(u => u.Id == userId)
-                .SingleOrDefaultAsync(cancellationToken);
-
-            if (currentUser is null)
-            {
-                return Result.Failure<List<ProductResponse>>(UserErrors.NotFound(userId));
-            }
-
-            int currentAge = CalculateAge(currentUser.BirthDate);
-            var minBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge + 5) - 1));
-            var maxBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge - 5)));
-
-            List<Guid> similarUserIds = await context.Users
-                .AsNoTracking()
-                .Where(u => u.Id != userId
-                         && u.Gender == currentUser.Gender
-                         && u.BirthDate >= minBirth
-                         && u.BirthDate <= maxBirth)
-                .Select(u => u.Id)
-                .ToListAsync(cancellationToken);
-
-            if (similarUserIds.Count > 0)
-            {
-                List<Guid> popularProductIds = await context.Orders
-                    .AsNoTracking()
-                    .Where(o => similarUserIds.Contains(o.UserId))
-                    .SelectMany(o => o.Items.Select(i => i.ProductId))
-                    .GroupBy(id => id)
-                    .OrderByDescending(g => g.Count())
-                    .Take(20)
-                    .Select(g => g.Key)
-                    .ToListAsync(cancellationToken);
-
-                if (popularProductIds.Count > 0)
-                {
-                    List<Vector> popularEmbeddings = await context.Products
-                        .AsNoTracking()
-                        .Where(p => popularProductIds.Contains(p.Id))
-                        .Select(p => p.Embedding)
-                        .ToListAsync(cancellationToken);
-
-                    searchVector = ComputeAverageEmbedding(popularEmbeddings);
-                }
-            }
-
-            if (searchVector is null)
-            {
-                return await GetGloballyPopularProductsAsync(query.Count, [], cancellationToken);
-            }
+            return Result.Failure<List<ProductResponse>>(productsResult.Error);
         }
 
-        List<ProductResponse> recommendations = await context.Products
+        bool fromOrders = productsResult.Value.Ordered;
+        List<Product> products = productsResult.Value.Products;
+
+        Vector searchVector = ComputeAverageEmbedding(products.ConvertAll(x => x.Embedding));
+
+        List<Guid> orderedProductIds = fromOrders
+            ? products.ConvertAll(x => x.Id)
+            : [];
+
+        return await context.Products
             .AsNoTracking()
             .Include(p => p.Category)
             .Where(p => !orderedProductIds.Contains(p.Id))
-            .OrderBy(p => p.Embedding.CosineDistance(searchVector))
+            .OrderBy(p => p.Embedding.MaxInnerProduct(searchVector))
             .Take(query.Count)
             .Select(p => new ProductResponse(
                 p.Id,
@@ -110,40 +57,78 @@ internal sealed class GetRecommendationsQueryHandler(
                 p.Category.Name,
                 p.CreatedAt))
             .ToListAsync(cancellationToken);
-
-        return recommendations;
     }
 
-    private async Task<Result<List<ProductResponse>>> GetGloballyPopularProductsAsync(
-        int count,
-        List<Guid> excludeIds,
+    public record GetOrderedOrSimilarByUserResult(List<Product> Products, bool Ordered);
+
+    private async Task<Result<GetOrderedOrSimilarByUserResult>> GetOrderedOrSimilarByUserAsync(
         CancellationToken cancellationToken)
     {
-        List<Guid> popularIds = await context.OrderItems
+        Guid userId = userContext.UserId;
+
+        List<Product> orderedProducts = await context.Orders
+           .AsNoTracking()
+           .Where(o => o.UserId == userId)
+           .SelectMany(o => o.Items.Select(x => x.Product))
+           .GroupBy(x => x.Id)
+           .Select(x => x.First())
+           .ToListAsync(cancellationToken);
+
+        if (orderedProducts.Count > 0)
+        {
+            return new GetOrderedOrSimilarByUserResult(orderedProducts, true);
+        }
+
+        User? currentUser = await context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .SingleOrDefaultAsync(cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<GetOrderedOrSimilarByUserResult>(UserErrors.NotFound(userId));
+        }
+
+        int currentAge = CalculateAge(currentUser.BirthDate);
+        var minBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge + 3) - 1));
+        var maxBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-(currentAge - 3)));
+
+
+        List<Guid> similarUserIds = await context.Users
             .AsNoTracking()
-            .Where(oi => !excludeIds.Contains(oi.ProductId))
-            .GroupBy(oi => oi.ProductId)
+            .Where(u => u.Id != userId
+                    && u.Gender == currentUser.Gender
+                    && u.BirthDate >= minBirth
+                    && u.BirthDate <= maxBirth)
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
+
+        if (similarUserIds.Count == 0)
+        {
+            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductToMetric);
+        }
+
+        List<Guid> popularProductIds = await context.Orders
+            .AsNoTracking()
+            .Where(o => similarUserIds.Contains(o.UserId))
+            .SelectMany(o => o.Items.Select(i => i.ProductId))
+            .GroupBy(id => id)
             .OrderByDescending(g => g.Count())
-            .Take(count)
+            .Take(20)
             .Select(g => g.Key)
             .ToListAsync(cancellationToken);
 
-        List<ProductResponse> products = await context.Products
+        if (popularProductIds.Count == 0)
+        {
+            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductToMetric);
+        }
+
+        List<Product> products = await context.Products
             .AsNoTracking()
-            .Include(p => p.Category)
-            .Where(p => popularIds.Contains(p.Id))
-            .Select(p => new ProductResponse(
-                p.Id,
-                p.Name,
-                p.Description,
-                p.Price.Amount,
-                p.Price.Currency,
-                p.CategoryId,
-                p.Category.Name,
-                p.CreatedAt))
+            .Where(p => popularProductIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
-        return products;
+        return new GetOrderedOrSimilarByUserResult(products, false);
     }
 
     private static Vector ComputeAverageEmbedding(List<Vector> embeddings)
