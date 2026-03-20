@@ -9,7 +9,7 @@
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.3" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" />
     <!-- Domain -->
-    <PackageVersion Include="Pgvector" Version="0.3.0" />
+    <PackageVersion Include="Pgvector" Version="0.3.2" />
     <!-- Application -->
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
