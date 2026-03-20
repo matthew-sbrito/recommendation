@@ -301,6 +301,7 @@ public sealed class DataSeeder(
         var byName = products.ToDictionary(p => p.Name);
         var orders = new List<Order>();
         int orderIndex = 1;
+        int itemIndex = 1;
 
         Order MakeOrder(Guid userId, (string Name, int Qty)[] items)
         {
@@ -309,7 +310,7 @@ public sealed class DataSeeder(
                 Product product = byName[i.Name];
                 return new OrderItem
                 {
-                    Id = new Guid($"00000005-0000-0000-0000-{orderIndex:D12}"),
+                    Id = new Guid($"00000005-0000-0000-0000-{itemIndex++:D12}"),
                     ProductId = product.Id,
                     Quantity = i.Qty,
                     UnitPrice = product.Price.Amount

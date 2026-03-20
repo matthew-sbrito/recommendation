@@ -1,6 +1,6 @@
 # Recommendation System
 
-A product recommendation API built with Clean Architecture, .NET 10, and pgvector. Recommendations are personalized based on the user's order history using vector similarity search. Users with no order history receive demographic-based or globally popular suggestions.
+A product recommendation API built with Clean Architecture, .NET 10, pgvector, and .NET Aspire. Recommendations are personalized based on the user's order history using vector similarity search. Users with no order history receive demographic-based or globally popular suggestions.
 
 ## Features
 
@@ -11,45 +11,50 @@ A product recommendation API built with Clean Architecture, .NET 10, and pgvecto
 - **JWT authentication** with permission-based authorization
 - **CQRS** with FluentValidation pipeline
 - **EF Core 10 + PostgreSQL** with snake_case naming conventions
-- **Structured logging** with Serilog → Seq
+- **Structured logging** with Serilog
+- **.NET Aspire** orchestration with built-in OpenTelemetry (traces, metrics, logs) and Aspire Dashboard
 - **Architecture tests** enforcing layer boundaries
 
 ## Domain
 
-| Entity | Key fields |
-|--------|-----------|
-| `User` | Email, FirstName, LastName, BirthDate, Gender, PasswordHash |
-| `Category` | Name, Description |
-| `Product` | Name, Description, Price (Money), CategoryId, Embedding (vector 1024) |
-| `Order` | UserId, TotalAmount, CreatedAt, Items |
-| `OrderItem` | OrderId, ProductId, Quantity, UnitPrice |
+| Entity      | Key fields                                                            |
+| ----------- | --------------------------------------------------------------------- |
+| `User`      | Email, FirstName, LastName, BirthDate, Gender, PasswordHash           |
+| `Category`  | Name, Description                                                     |
+| `Product`   | Name, Description, Price (Money), CategoryId, Embedding (vector 1024) |
+| `Order`     | UserId, TotalAmount, CreatedAt, Items                                 |
+| `OrderItem` | OrderId, ProductId, Quantity, UnitPrice                               |
 
 ## Endpoints
 
 ### Users
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `POST` | `/users/register` | — | Register a new user |
-| `POST` | `/users/login` | — | Login and receive JWT |
-| `GET` | `/users/{userId}` | ✓ | Get user by ID |
+
+| Method | Route             | Auth | Description           |
+| ------ | ----------------- | ---- | --------------------- |
+| `POST` | `/users/register` | —    | Register a new user   |
+| `POST` | `/users/login`    | —    | Login and receive JWT |
+| `GET`  | `/users/{userId}` | ✓    | Get user by ID        |
 
 ### Products
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `GET` | `/products` | ✓ | Paginated list with filters (search, category, price range) |
-| `GET` | `/products/recommendations` | ✓ | Personalized recommendations for the logged-in user |
+
+| Method | Route                       | Auth | Description                                                 |
+| ------ | --------------------------- | ---- | ----------------------------------------------------------- |
+| `GET`  | `/products`                 | ✓    | Paginated list with filters (search, category, price range) |
+| `GET`  | `/products/recommendations` | ✓    | Personalized recommendations for the logged-in user         |
 
 ### Categories
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `GET` | `/categories` | ✓ | Paginated list with optional search |
+
+| Method | Route         | Auth | Description                         |
+| ------ | ------------- | ---- | ----------------------------------- |
+| `GET`  | `/categories` | ✓    | Paginated list with optional search |
 
 ### Orders
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `POST` | `/orders` | ✓ | Create a new order |
-| `GET` | `/orders` | ✓ | Order history (summary) |
-| `GET` | `/orders/{orderId}` | ✓ | Order detail with items |
+
+| Method | Route               | Auth | Description             |
+| ------ | ------------------- | ---- | ----------------------- |
+| `POST` | `/orders`           | ✓    | Create a new order      |
+| `GET`  | `/orders`           | ✓    | Order history (summary) |
+| `GET`  | `/orders/{orderId}` | ✓    | Order detail with items |
 
 ## Recommendation Algorithm
 
@@ -77,7 +82,7 @@ GET /products/recommendations
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) (for PostgreSQL and PgAdmin containers managed by Aspire)
 - OpenRouter API key (for embedding generation — optional, falls back to random vectors)
 
 ### Configuration
@@ -96,35 +101,47 @@ Add your OpenRouter key to `src/Web.Api/appsettings.Development.json`:
 ### Run
 
 ```bash
-docker compose up
+dotnet run --project aspire/Recommendation.AppHost
 ```
 
-The API starts at **http://localhost:5000**, Swagger at **http://localhost:5000/swagger**, and Seq at **http://localhost:8081**.
+The Aspire AppHost will orchestrate all services:
+
+| Service           | URL                          |
+| ----------------- | ---------------------------- |
+| API               | http://localhost:5000        |
+| Swagger           | http://localhost:5000/swagger |
+| Aspire Dashboard  | http://localhost:15238       |
+| PgAdmin           | managed by Aspire            |
 
 On first run (Development), the app will:
-1. Apply all EF Core migrations
-2. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
+
+1. Start a PostgreSQL container (`pgvector/pgvector:pg17`) with a persistent data volume
+2. Apply all EF Core migrations
+3. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
 
 ### Seeded test accounts
 
 All test users share the password **`Password123!`**
 
-| Email | Gender | Birth date | Has orders |
-|-------|--------|-----------|------------|
-| carlos.silva@test.com | Male | 1997-03-15 | ✓ Electronics |
-| ana.costa@test.com | Female | 1992-07-22 | ✓ Beauty + Home |
-| pedro.santos@test.com | Male | 1990-11-05 | ✓ Books + Toys |
-| julia.lima@test.com | Female | 1998-01-30 | ✓ Clothing + Sports |
-| lucas.oliveira@test.com | Male | 1995-06-10 | ✓ Food |
-| mariana.rocha@test.com | Female | 1988-09-14 | — (demographic fallback) |
-| gabriel.alves@test.com | Male | 1996-04-20 | — (demographic fallback) |
-| beatriz.nunes@test.com | Female | 1993-12-03 | — (demographic fallback) |
-| alex.ferreira@test.com | Other | 1991-08-18 | — (global fallback) |
-| rafael.souza@test.com | Male | 2001-05-25 | — (global fallback) |
+| Email                   | Gender | Birth date | Has orders               |
+| ----------------------- | ------ | ---------- | ------------------------ |
+| carlos.silva@test.com   | Male   | 1997-03-15 | ✓ Electronics            |
+| ana.costa@test.com      | Female | 1992-07-22 | ✓ Beauty + Home          |
+| pedro.santos@test.com   | Male   | 1990-11-05 | ✓ Books + Toys           |
+| julia.lima@test.com     | Female | 1998-01-30 | ✓ Clothing + Sports      |
+| lucas.oliveira@test.com | Male   | 1995-06-10 | ✓ Food                   |
+| mariana.rocha@test.com  | Female | 1988-09-14 | — (demographic fallback) |
+| gabriel.alves@test.com  | Male   | 1996-04-20 | — (demographic fallback) |
+| beatriz.nunes@test.com  | Female | 1993-12-03 | — (demographic fallback) |
+| alex.ferreira@test.com  | Other  | 1991-08-18 | — (global fallback)      |
+| rafael.souza@test.com   | Male   | 2001-05-25 | — (global fallback)      |
 
 ## Project Structure
 
 ```
+aspire/
+├── Recommendation.AppHost/        # Aspire orchestrator — defines all services and infrastructure
+└── Recommendation.ServiceDefaults/ # Shared OpenTelemetry, health checks, and resilience config
 src/
 ├── SharedKernel/          # Entity, Result<T>, Error, Money, IDateTimeProvider
 ├── Domain/

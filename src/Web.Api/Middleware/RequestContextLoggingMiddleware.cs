@@ -1,15 +1,14 @@
-﻿using Microsoft.Extensions.Primitives;
-using Serilog.Context;
+using Microsoft.Extensions.Primitives;
 
 namespace Web.Api.Middleware;
 
-public class RequestContextLoggingMiddleware(RequestDelegate next)
+public class RequestContextLoggingMiddleware(RequestDelegate next, ILogger<RequestContextLoggingMiddleware> logger)
 {
     private const string CorrelationIdHeaderName = "Correlation-Id";
 
     public Task Invoke(HttpContext context)
     {
-        using (LogContext.PushProperty("CorrelationId", GetCorrelationId(context)))
+        using (logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = GetCorrelationId(context) }))
         {
             return next.Invoke(context);
         }
