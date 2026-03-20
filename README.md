@@ -1,6 +1,6 @@
 # Recommendation System
 
-A product recommendation API built with Clean Architecture, .NET 10, and pgvector. Recommendations are personalized based on the user's order history using vector similarity search. Users with no order history receive demographic-based or globally popular suggestions.
+A product recommendation API built with Clean Architecture, .NET 10, pgvector, and .NET Aspire. Recommendations are personalized based on the user's order history using vector similarity search. Users with no order history receive demographic-based or globally popular suggestions.
 
 ## Features
 
@@ -11,7 +11,8 @@ A product recommendation API built with Clean Architecture, .NET 10, and pgvecto
 - **JWT authentication** with permission-based authorization
 - **CQRS** with FluentValidation pipeline
 - **EF Core 10 + PostgreSQL** with snake_case naming conventions
-- **Structured logging** with Serilog → Seq
+- **Structured logging** with Serilog
+- **.NET Aspire** orchestration with built-in OpenTelemetry (traces, metrics, logs) and Aspire Dashboard
 - **Architecture tests** enforcing layer boundaries
 
 ## Domain
@@ -81,7 +82,7 @@ GET /products/recommendations
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) (for PostgreSQL and PgAdmin containers managed by Aspire)
 - OpenRouter API key (for embedding generation — optional, falls back to random vectors)
 
 ### Configuration
@@ -100,16 +101,23 @@ Add your OpenRouter key to `src/Web.Api/appsettings.Development.json`:
 ### Run
 
 ```bash
-docker compose up
+dotnet run --project aspire/Recommendation.AppHost
 ```
 
-The API starts at **http://localhost:5000**, Swagger at **http://localhost:5000/swagger**, and Seq at **http://localhost:8081**.
+The Aspire AppHost will orchestrate all services:
+
+| Service           | URL                          |
+| ----------------- | ---------------------------- |
+| API               | http://localhost:5000        |
+| Swagger           | http://localhost:5000/swagger |
+| Aspire Dashboard  | http://localhost:15238       |
+| PgAdmin           | managed by Aspire            |
 
 On first run (Development), the app will:
 
-1. Apply all EF Core migrations
-   1. dotnet ef migrations add CreateInitialSchema --project src/Infrastructure/Infrastructure.csproj --startup-project src/Web.Api/Web.Api.csproj --output-dir Database/Migrations
-1. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
+1. Start a PostgreSQL container (`pgvector/pgvector:pg17`) with a persistent data volume
+2. Apply all EF Core migrations
+3. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
 
 ### Seeded test accounts
 
@@ -131,6 +139,9 @@ All test users share the password **`Password123!`**
 ## Project Structure
 
 ```
+aspire/
+├── Recommendation.AppHost/        # Aspire orchestrator — defines all services and infrastructure
+└── Recommendation.ServiceDefaults/ # Shared OpenTelemetry, health checks, and resilience config
 src/
 ├── SharedKernel/          # Entity, Result<T>, Error, Money, IDateTimeProvider
 ├── Domain/
