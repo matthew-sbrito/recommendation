@@ -16,40 +16,44 @@ A product recommendation API built with Clean Architecture, .NET 10, and pgvecto
 
 ## Domain
 
-| Entity | Key fields |
-|--------|-----------|
-| `User` | Email, FirstName, LastName, BirthDate, Gender, PasswordHash |
-| `Category` | Name, Description |
-| `Product` | Name, Description, Price (Money), CategoryId, Embedding (vector 1024) |
-| `Order` | UserId, TotalAmount, CreatedAt, Items |
-| `OrderItem` | OrderId, ProductId, Quantity, UnitPrice |
+| Entity      | Key fields                                                            |
+| ----------- | --------------------------------------------------------------------- |
+| `User`      | Email, FirstName, LastName, BirthDate, Gender, PasswordHash           |
+| `Category`  | Name, Description                                                     |
+| `Product`   | Name, Description, Price (Money), CategoryId, Embedding (vector 1024) |
+| `Order`     | UserId, TotalAmount, CreatedAt, Items                                 |
+| `OrderItem` | OrderId, ProductId, Quantity, UnitPrice                               |
 
 ## Endpoints
 
 ### Users
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `POST` | `/users/register` | — | Register a new user |
-| `POST` | `/users/login` | — | Login and receive JWT |
-| `GET` | `/users/{userId}` | ✓ | Get user by ID |
+
+| Method | Route             | Auth | Description           |
+| ------ | ----------------- | ---- | --------------------- |
+| `POST` | `/users/register` | —    | Register a new user   |
+| `POST` | `/users/login`    | —    | Login and receive JWT |
+| `GET`  | `/users/{userId}` | ✓    | Get user by ID        |
 
 ### Products
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `GET` | `/products` | ✓ | Paginated list with filters (search, category, price range) |
-| `GET` | `/products/recommendations` | ✓ | Personalized recommendations for the logged-in user |
+
+| Method | Route                       | Auth | Description                                                 |
+| ------ | --------------------------- | ---- | ----------------------------------------------------------- |
+| `GET`  | `/products`                 | ✓    | Paginated list with filters (search, category, price range) |
+| `GET`  | `/products/recommendations` | ✓    | Personalized recommendations for the logged-in user         |
 
 ### Categories
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `GET` | `/categories` | ✓ | Paginated list with optional search |
+
+| Method | Route         | Auth | Description                         |
+| ------ | ------------- | ---- | ----------------------------------- |
+| `GET`  | `/categories` | ✓    | Paginated list with optional search |
 
 ### Orders
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `POST` | `/orders` | ✓ | Create a new order |
-| `GET` | `/orders` | ✓ | Order history (summary) |
-| `GET` | `/orders/{orderId}` | ✓ | Order detail with items |
+
+| Method | Route               | Auth | Description             |
+| ------ | ------------------- | ---- | ----------------------- |
+| `POST` | `/orders`           | ✓    | Create a new order      |
+| `GET`  | `/orders`           | ✓    | Order history (summary) |
+| `GET`  | `/orders/{orderId}` | ✓    | Order detail with items |
 
 ## Recommendation Algorithm
 
@@ -102,25 +106,27 @@ docker compose up
 The API starts at **http://localhost:5000**, Swagger at **http://localhost:5000/swagger**, and Seq at **http://localhost:8081**.
 
 On first run (Development), the app will:
+
 1. Apply all EF Core migrations
-2. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
+   1. dotnet ef migrations add CreateInitialSchema --project src/Infrastructure/Infrastructure.csproj --startup-project src/Web.Api/Web.Api.csproj --output-dir Database/Migrations
+1. Seed the database with 8 categories, 80 products (with embeddings), 10 users, and 10 orders
 
 ### Seeded test accounts
 
 All test users share the password **`Password123!`**
 
-| Email | Gender | Birth date | Has orders |
-|-------|--------|-----------|------------|
-| carlos.silva@test.com | Male | 1997-03-15 | ✓ Electronics |
-| ana.costa@test.com | Female | 1992-07-22 | ✓ Beauty + Home |
-| pedro.santos@test.com | Male | 1990-11-05 | ✓ Books + Toys |
-| julia.lima@test.com | Female | 1998-01-30 | ✓ Clothing + Sports |
-| lucas.oliveira@test.com | Male | 1995-06-10 | ✓ Food |
-| mariana.rocha@test.com | Female | 1988-09-14 | — (demographic fallback) |
-| gabriel.alves@test.com | Male | 1996-04-20 | — (demographic fallback) |
-| beatriz.nunes@test.com | Female | 1993-12-03 | — (demographic fallback) |
-| alex.ferreira@test.com | Other | 1991-08-18 | — (global fallback) |
-| rafael.souza@test.com | Male | 2001-05-25 | — (global fallback) |
+| Email                   | Gender | Birth date | Has orders               |
+| ----------------------- | ------ | ---------- | ------------------------ |
+| carlos.silva@test.com   | Male   | 1997-03-15 | ✓ Electronics            |
+| ana.costa@test.com      | Female | 1992-07-22 | ✓ Beauty + Home          |
+| pedro.santos@test.com   | Male   | 1990-11-05 | ✓ Books + Toys           |
+| julia.lima@test.com     | Female | 1998-01-30 | ✓ Clothing + Sports      |
+| lucas.oliveira@test.com | Male   | 1995-06-10 | ✓ Food                   |
+| mariana.rocha@test.com  | Female | 1988-09-14 | — (demographic fallback) |
+| gabriel.alves@test.com  | Male   | 1996-04-20 | — (demographic fallback) |
+| beatriz.nunes@test.com  | Female | 1993-12-03 | — (demographic fallback) |
+| alex.ferreira@test.com  | Other  | 1991-08-18 | — (global fallback)      |
+| rafael.souza@test.com   | Male   | 2001-05-25 | — (global fallback)      |
 
 ## Project Structure
 
