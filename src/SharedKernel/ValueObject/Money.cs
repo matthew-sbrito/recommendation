@@ -1,4 +1,6 @@
-namespace SharedKernel;
+using SharedKernel.Errors;
+
+namespace SharedKernel.ValueObject;
 
 public sealed class Money : IEquatable<Money>, IComparable<Money>
 {

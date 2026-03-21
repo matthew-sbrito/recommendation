@@ -1,5 +1,6 @@
 ﻿using Domain.Users;
 using SharedKernel;
+using SharedKernel.DomainEvents;
 
 namespace Application.Users.Register;
 

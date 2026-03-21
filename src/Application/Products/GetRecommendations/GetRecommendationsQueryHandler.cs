@@ -1,13 +1,13 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
-using Domain.Orders;
 using Domain.Products;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Pgvector;
 using Pgvector.EntityFrameworkCore;
 using SharedKernel;
+using SharedKernel.Errors;
 
 namespace Application.Products.GetRecommendations;
 
@@ -16,9 +16,9 @@ internal sealed class GetRecommendationsQueryHandler(
     IUserContext userContext)
     : IQueryHandler<GetRecommendationsQuery, List<ProductResponse>>
 {
-    private static readonly Error NoProductToMetric = Error.Failure(
+    private static readonly Error NoProductsToRecommend = Error.Failure(
         "Recommendation.NoProducts",
-        "No products found to recommend products for you.");
+        "No products found to recommend.");
 
     public async Task<Result<List<ProductResponse>>> Handle(
         GetRecommendationsQuery query,
@@ -45,7 +45,7 @@ internal sealed class GetRecommendationsQueryHandler(
             .AsNoTracking()
             .Include(p => p.Category)
             .Where(p => !orderedProductIds.Contains(p.Id))
-            .OrderBy(p => p.Embedding.MaxInnerProduct(searchVector))
+            .OrderBy(p => p.Embedding.CosineDistance(searchVector))
             .Take(query.Count)
             .Select(p => new ProductResponse(
                 p.Id,
@@ -105,7 +105,7 @@ internal sealed class GetRecommendationsQueryHandler(
 
         if (similarUserIds.Count == 0)
         {
-            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductToMetric);
+            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductsToRecommend);
         }
 
         List<Guid> popularProductIds = await context.Orders
@@ -120,7 +120,7 @@ internal sealed class GetRecommendationsQueryHandler(
 
         if (popularProductIds.Count == 0)
         {
-            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductToMetric);
+            return Result.Failure<GetOrderedOrSimilarByUserResult>(NoProductsToRecommend);
         }
 
         List<Product> products = await context.Products

@@ -1,8 +1,8 @@
 using Application.Abstractions.Messaging;
 using Application.Products;
 using Application.Products.GetPaginated;
-using Application.Shared;
 using SharedKernel;
+using SharedKernel.DTO;
 using Web.Api.Extensions;
 using Web.Api.Infrastructure;
 

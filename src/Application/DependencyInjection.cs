@@ -3,6 +3,7 @@ using Application.Abstractions.Messaging;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SharedKernel;
+using SharedKernel.DomainEvents;
 
 namespace Application;
 

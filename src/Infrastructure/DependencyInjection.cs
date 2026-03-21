@@ -27,17 +27,17 @@ public static class DependencyInjection
         IConfiguration configuration) =>
         services
             .AddServices()
-            .AddOpenRouterClient(configuration)
             .AddDatabase(configuration)
             .AddHealthChecks(configuration)
             .AddAuthenticationInternal(configuration)
-            .AddAuthorizationInternal();
+            .AddAuthorizationInternal()
+            .AddOpenRouterClient(configuration);
 
     private static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddTransient<IDomainEventsDispatcher, DomainEventsDispatcher>();
-        services.AddTransient<IProductEmbeddingService, ProductEmbeddingService>();
+        services.AddTransient<IEmbeddingService, OpenRouterEmbeddingService>();
         services.AddTransient<DataSeeder>();
 
         return services;
@@ -49,8 +49,8 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(
             options => options
-                .UseNpgsql(connectionString, pgsqlOptions =>
-                    pgsqlOptions
+                .UseNpgsql(connectionString, npgsqlOptions =>
+                    npgsqlOptions
                         .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default)
                         .UseVector())
                 .UseSnakeCaseNamingConvention());
