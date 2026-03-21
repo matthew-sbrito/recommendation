@@ -2,6 +2,7 @@
 using FluentValidation;
 using FluentValidation.Results;
 using SharedKernel;
+using SharedKernel.Errors;
 
 namespace Application.Abstractions.Behaviors;
 

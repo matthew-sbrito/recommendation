@@ -10,6 +10,8 @@ public sealed record OrderItemResponse(
     Guid Id,
     Guid ProductId,
     string ProductName,
+    Guid CategoryId,
+    string CategoryName,
     int Quantity,
     decimal UnitPrice,
     decimal LineTotal);

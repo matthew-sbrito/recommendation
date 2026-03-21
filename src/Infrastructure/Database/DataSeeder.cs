@@ -8,12 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Pgvector;
 using SharedKernel;
+using SharedKernel.ValueObject;
 
 namespace Infrastructure.Database;
 
 public sealed class DataSeeder(
     ApplicationDbContext context,
-    IProductEmbeddingService embeddingService,
+    IEmbeddingService embeddingService,
     IPasswordHasher passwordHasher,
     ILogger<DataSeeder> logger)
 {
@@ -219,18 +220,13 @@ public sealed class DataSeeder(
                     Embedding = new Vector(new float[EmbeddingDimensions])
                 };
 
-                Result<float[]> embeddingResult = await embeddingService.GenerateEmbeddingAsync(product, cancellationToken);
+                Result<float[]> embeddingResult = await embeddingService.GenerateEmbeddingAsync(
+                    product.GetEmbeddingText(), cancellationToken);
 
                 if (embeddingResult.IsSuccess)
                 {
                     product.Embedding = new Vector(embeddingResult.Value);
                     logger.LogInformation("Generated embedding for: {Product}", product.Name);
-                }
-                else
-                {
-                    product.Embedding = GenerateRandomEmbedding();
-                    logger.LogWarning("Embedding failed for '{Product}', using random vector. Error: {Error}",
-                        product.Name, embeddingResult.Error.Description);
                 }
 
                 product.Category = null!; // clear nav prop before insert to avoid tracking issues
@@ -240,28 +236,6 @@ public sealed class DataSeeder(
         }
 
         return products;
-    }
-
-    private static Vector GenerateRandomEmbedding()
-    {
-        float[] values = new float[EmbeddingDimensions];
-        float magnitude = 0f;
-
-        for (int i = 0; i < EmbeddingDimensions; i++)
-        {
-            byte[] bytes = new byte[4];
-            System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
-            values[i] = BitConverter.ToInt32(bytes) / (float)int.MaxValue;
-            magnitude += values[i] * values[i];
-        }
-
-        magnitude = MathF.Sqrt(magnitude);
-        for (int i = 0; i < EmbeddingDimensions; i++)
-        {
-            values[i] /= magnitude;
-        }
-
-        return new Vector(values);
     }
 
     // ── Users ────────────────────────────────────────────────────────────────

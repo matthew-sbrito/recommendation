@@ -1,9 +1,9 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
-using Application.Shared;
 using Domain.Categories;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
+using SharedKernel.DTO;
 
 namespace Application.Categories.GetPaginated;
 

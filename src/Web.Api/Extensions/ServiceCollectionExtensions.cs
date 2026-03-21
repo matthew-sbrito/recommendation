@@ -1,45 +1,32 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-//using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi;
 
 namespace Web.Api.Extensions;
 
 internal static class ServiceCollectionExtensions
 {
-    internal static IServiceCollection AddSwaggerGenWithAuth(this IServiceCollection services)
+    internal static IServiceCollection AddOpenApiWithAuth(this IServiceCollection services)
     {
-        services.AddSwaggerGen(static o =>
+        services.AddOpenApi(options =>
         {
-            o.CustomSchemaIds(id => id.FullName!.Replace('+', '-'));
+            options.AddDocumentTransformer((document, _, _) =>
+            {
+                var securityScheme = new OpenApiSecurityScheme
+                {
+                    Name = "JWT Authentication",
+                    Description = "Enter your JWT token in this field",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
+                    BearerFormat = "JWT"
+                };
 
-            // Temporarily commented out
-            //var securityScheme = new OpenApiSecurityScheme
-            //{
-            //    Name = "JWT Authentication",
-            //    Description = "Enter your JWT token in this field",
-            //    In = ParameterLocation.Header,
-            //    Type = SecuritySchemeType.Http,
-            //    Scheme = JwtBearerDefaults.AuthenticationScheme,
-            //    BearerFormat = "JWT"
-            //};
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                document.Components.SecuritySchemes.Add(JwtBearerDefaults.AuthenticationScheme, securityScheme);
 
-            //o.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, securityScheme);
-
-            //var securityRequirement = new OpenApiSecurityRequirement
-            //{
-            //    {
-            //        new OpenApiSecurityScheme
-            //        {
-            //            Reference = new OpenApiReference
-            //            {
-            //                Type = ReferenceType.SecurityScheme,
-            //                Id = JwtBearerDefaults.AuthenticationScheme
-            //            }
-            //        },
-            //        []
-            //    }
-            //};
-
-            //o.AddSecurityRequirement(securityRequirement);
+                return Task.CompletedTask;
+            });
         });
 
         return services;

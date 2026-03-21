@@ -25,6 +25,8 @@ internal sealed class GetOrderByIdQueryHandler(IApplicationDbContext context, IU
                     i.Id,
                     i.ProductId,
                     i.Product.Name,
+                    i.Product.Category.Id,
+                    i.Product.Category.Name,
                     i.Quantity,
                     i.UnitPrice,
                     i.Quantity * i.UnitPrice)).ToList()))

@@ -1,14 +1,11 @@
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-IResourceBuilder<PostgresServerResource> postgres = builder
+IResourceBuilder<PostgresDatabaseResource> recommendationDatabase = builder
     .AddPostgres("postgres")
     .WithImage("pgvector/pgvector", "pg17")
     .WithHostPort(5432)
     .WithDataVolume()
-    .WithPgAdmin()
-    .WithLifetime(ContainerLifetime.Persistent);
-
-IResourceBuilder<PostgresDatabaseResource> recommendationDatabase = postgres
+    .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase("recommendation-db");
 
 builder.AddProject<Projects.Web_Api>("web-api")

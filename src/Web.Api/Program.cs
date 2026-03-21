@@ -8,8 +8,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddSwaggerGenWithAuth();
-
 builder.Services
     .AddApplication()
     .AddPresentation()
@@ -24,7 +22,7 @@ app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwaggerWithUi();
+    app.UseScalarWithOpenApi();
 
     await app.ApplyMigrationsAsync();
 

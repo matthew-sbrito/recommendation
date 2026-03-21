@@ -6,6 +6,7 @@ using Domain.Users;
 using Infrastructure.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
+using SharedKernel.DomainEvents;
 
 namespace Infrastructure.Database;
 

@@ -1,4 +1,4 @@
-﻿using Application.Abstractions.Messaging;
+using Application.Abstractions.Messaging;
 using Application.Users.Login;
 using SharedKernel;
 using Web.Api.Extensions;

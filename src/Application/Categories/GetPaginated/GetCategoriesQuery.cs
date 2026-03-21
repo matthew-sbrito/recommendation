@@ -1,5 +1,5 @@
 using Application.Abstractions.Messaging;
-using Application.Shared;
+using SharedKernel.DTO;
 
 namespace Application.Categories.GetPaginated;
 

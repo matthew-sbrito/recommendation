@@ -1,4 +1,4 @@
-using SharedKernel;
+using SharedKernel.Errors;
 
 namespace Domain.Products;
 

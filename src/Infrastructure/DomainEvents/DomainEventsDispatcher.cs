@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using SharedKernel;
+using SharedKernel.DomainEvents;
 
 namespace Infrastructure.DomainEvents;
 

@@ -82,7 +82,7 @@ GET /products/recommendations
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker](https://www.docker.com/) (for PostgreSQL and PgAdmin containers managed by Aspire)
+- [Docker](https://www.docker.com/) (for PostgreSQL container managed by Aspire)
 - OpenRouter API key (for embedding generation — optional, falls back to random vectors)
 
 ### Configuration
@@ -101,17 +101,16 @@ Add your OpenRouter key to `src/Web.Api/appsettings.Development.json`:
 ### Run
 
 ```bash
-dotnet run --project aspire/Recommendation.AppHost
+dotnet run --project aspire/Aspire.AppHost
 ```
 
 The Aspire AppHost will orchestrate all services:
 
-| Service           | URL                          |
-| ----------------- | ---------------------------- |
-| API               | http://localhost:5000        |
-| Swagger           | http://localhost:5000/swagger |
-| Aspire Dashboard  | http://localhost:15238       |
-| PgAdmin           | managed by Aspire            |
+| Service          | URL                        |
+| ---------------- | -------------------------- |
+| API              | http://localhost:5000      |
+| Scalar           | http://localhost:5000/docs |
+| Aspire Dashboard | http://localhost:15238     |
 
 On first run (Development), the app will:
 
@@ -140,7 +139,7 @@ All test users share the password **`Password123!`**
 
 ```
 aspire/
-├── Recommendation.AppHost/        # Aspire orchestrator — defines all services and infrastructure
+├── Aspire.AppHost/        # Aspire orchestrator — defines all services and infrastructure
 └── Recommendation.ServiceDefaults/ # Shared OpenTelemetry, health checks, and resilience config
 src/
 ├── SharedKernel/          # Entity, Result<T>, Error, Money, IDateTimeProvider
